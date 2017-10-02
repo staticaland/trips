@@ -9,6 +9,13 @@ import click
 BASE_URL = 'http://reisapi.ruter.no'
 GET_PLACES_URL = BASE_URL + '/Place/GetPlaces/'
 GET_TRAVELS_URL = BASE_URL + '/Travel/GetTravels'
+        
+TRANSPORTATIONS = { 0: 'Walk',
+                    2: 'Bus',
+                    5: 'Boat',
+                    6: 'Train',
+                    7: 'Tram',
+                    8: 'Subway'}
 
 def place_id(place):
 
@@ -43,19 +50,26 @@ def trip(from_place, to_place):
 
     for position, proposal in enumerate(proposals, start=1):
 
-        print('Forslag #{0} (Travel time: {1})'.format(position, proposal.get('TotalTravelTime')))
-        
-        #click.echo('Avreise:', proposal.get('DepartureTime'))
-        
-        for pos, stage in enumerate(proposal.get('Stages')):
-            print('Steg:', pos)
-            print('Linjenavn:', stage.get('LineName'))
-            try:
-                print(stage.get('DepartureStop').get('Name'))
-            except:
-                pass
-            print('Transporttype', stage.get('Transportation'))
-        
-        print(proposal.get('ArrivalTime'))
         if proposal.get('Remarks'):
             print('Remarks! Check app or ruter.no.')
+
+        print('Forslag #{0} (Travel time: {1})'.format(position, proposal.get('TotalTravelTime')))
+
+        for pos, stage in enumerate(proposal.get('Stages')):
+
+            if stage.get('Transportation') == 0:
+                text = '{0} Walk {1}'.format(pos, stage.get('WalkingTime'))
+            else:
+                departure_name = stage.get('DepartureStop').get('Name')
+                departure = stage.get('DepartureTime')
+                line_name = stage.get('LineName')
+                arrival_name = stage.get('ArrivalStop').get('Name')
+                arrival = stage.get('ArrivalTime')
+                transportation = TRANSPORTATIONS.get(stage.get('Transportation'))
+
+                text = '{0} {1} {2} {3} {4} -> {5} {6}'.format(pos, departure_name, departure, line_name, transportation, arrival_name, arrival)
+
+            print(text) 
+
+        print()
+
