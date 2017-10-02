@@ -17,4 +17,5 @@ Features
 Inspiration
 --------------
 
-* pipenv
+** `ruter-cli <https://github.com/ErlendEllingsen/ruter-cli/>`_, a Ruter CLI written in Node.js
+** `vbb-cli <https://github.com/ErlendEllingsen/ruter-cli/>`_, a CLI for Berlin & Brandenburg public transport
