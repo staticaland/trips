@@ -3,10 +3,16 @@
 
 import requests
 import click
+import blindspin
+import time
+import logging
+from datetime import datetime, date, time
 
 """Main module."""
 
-BASE_URL = 'http://reisapi.ruter.no'
+logging.basicConfig(level=logging.DEBUG)
+
+BASE_URL = 'https://reisapi.ruter.no'
 GET_PLACES_URL = BASE_URL + '/Place/GetPlaces/'
 GET_TRAVELS_URL = BASE_URL + '/Travel/GetTravels'
         
@@ -26,16 +32,22 @@ def place_id(place):
     return id
 
 
-def trip_proposals(from_id, to_id):
+def trip_proposals(from_id, to_id, after_time=None):
+
+    if not after_time:
+        _after_time = datetime.now()
+        # 01102017190000
+        after_time = _after_time.strftime('%d%m%Y%H%M%S')
 
     payload = {'fromPlace': from_id,
                'toPlace': to_id,
-               'time': '01102017190000',
+               'time': after_time,
                'isafter': 'True',
                'proposals': '5'
               }
 
-    request = requests.get(GET_TRAVELS_URL, params=payload)
+    with blindspin.spinner():
+        request = requests.get(GET_TRAVELS_URL, params=payload)
 
     return request.json().get('TravelProposals')
 
@@ -53,7 +65,7 @@ def trip(from_place, to_place):
         if proposal.get('Remarks'):
             print('Remarks! Check app or ruter.no.')
 
-        print('Forslag #{0} (Travel time: {1})'.format(position, proposal.get('TotalTravelTime')))
+        print('Forslag #{0} (Travel time: {1})\n'.format(position, proposal.get('TotalTravelTime')))
 
         for pos, stage in enumerate(proposal.get('Stages')):
 
@@ -69,7 +81,6 @@ def trip(from_place, to_place):
 
                 text = '{0} {1} {2} {3} {4} -> {5} {6}'.format(pos, departure_name, departure, line_name, transportation, arrival_name, arrival)
 
-            print(text) 
+            click.echo(text) 
 
-        print()
-
+        click.echo()
