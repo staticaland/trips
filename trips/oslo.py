@@ -3,6 +3,7 @@
 
 import requests
 import click
+import udatetime
 import blindspin
 import time
 import logging
@@ -51,6 +52,12 @@ def trip_proposals(from_id, to_id, after_time=None):
 
     return request.json().get('TravelProposals')
 
+
+def pretty_time(da_time=''):
+    # 2017-10-07T16:41:00+02:00
+    time = udatetime.from_string(da_time)
+    return datetime.strftime(time, '%H:%M')
+
  
 def trip(from_place, to_place):
 
@@ -67,16 +74,16 @@ def trip(from_place, to_place):
 
         print('Forslag #{0} (Travel time: {1})\n'.format(position, proposal.get('TotalTravelTime')))
 
-        for pos, stage in enumerate(proposal.get('Stages')):
+        for pos, stage in enumerate(proposal.get('Stages'), start=1):
 
             if stage.get('Transportation') == 0:
                 text = '{0} Walk {1}'.format(pos, stage.get('WalkingTime'))
             else:
                 departure_name = stage.get('DepartureStop').get('Name')
-                departure = stage.get('DepartureTime')
+                departure = pretty_time(stage.get('DepartureTime'))
                 line_name = stage.get('LineName')
                 arrival_name = stage.get('ArrivalStop').get('Name')
-                arrival = stage.get('ArrivalTime')
+                arrival = pretty_time(stage.get('ArrivalTime'))
                 transportation = TRANSPORTATIONS.get(stage.get('Transportation'))
 
                 text = '{0} {1} {2} {3} {4} -> {5} {6}'.format(pos, departure_name, departure, line_name, transportation, arrival_name, arrival)
