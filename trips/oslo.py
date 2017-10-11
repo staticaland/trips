@@ -8,6 +8,7 @@ import time
 import logging
 from datetime import datetime, date, time
 import dotmap
+import crayons
 
 """Main module."""
 
@@ -66,10 +67,10 @@ def trip(from_place, to_place):
 
     for position, proposal in enumerate(proposals, start=1):
 
+        click.echo(crayons.yellow('------------ Suggestion #{0} ({1})-------------\n'.format(position, proposal.get('TotalTravelTime'), bold=True)))
+
         if proposal.get('Remarks'):
             print('Remarks! Check app or ruter.no.')
-
-        print('Forslag #{0} (Travel time: {1})\n'.format(position, proposal.get('TotalTravelTime')))
 
         for pos, stage in enumerate(proposal.get('Stages'), start=1):
 
@@ -78,7 +79,7 @@ def trip(from_place, to_place):
             if stage.Transportation == 0:
                 text = '[{0}] Walk ({1})'.format(pos, stage.WalkingTime)
             else:
-                step_params = dict(pos=pos,
+                step_params = dict(pos=crayons.cyan(pos, bold=True),
                                    departure_name=stage.DepartureStop.Name,
                                    departure_time=pretty_time(stage.DepartureTime),
                                    line_name=stage.LineName,
