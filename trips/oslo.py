@@ -4,14 +4,12 @@
 import requests
 import click
 import udatetime
-import blindspin
 import time
 import logging
 from datetime import datetime, date, time
+import dotmap
 
 """Main module."""
-
-logging.basicConfig(level=logging.DEBUG)
 
 BASE_URL = 'https://reisapi.ruter.no'
 GET_PLACES_URL = BASE_URL + '/Place/GetPlaces/'
@@ -47,8 +45,7 @@ def trip_proposals(from_id, to_id, after_time=None):
                'proposals': '5'
               }
 
-    with blindspin.spinner():
-        request = requests.get(GET_TRAVELS_URL, params=payload)
+    request = requests.get(GET_TRAVELS_URL, params=payload)
 
     return request.json().get('TravelProposals')
 
@@ -76,17 +73,21 @@ def trip(from_place, to_place):
 
         for pos, stage in enumerate(proposal.get('Stages'), start=1):
 
-            if stage.get('Transportation') == 0:
-                text = '{0} Walk {1}'.format(pos, stage.get('WalkingTime'))
-            else:
-                departure_name = stage.get('DepartureStop').get('Name')
-                departure = pretty_time(stage.get('DepartureTime'))
-                line_name = stage.get('LineName')
-                arrival_name = stage.get('ArrivalStop').get('Name')
-                arrival = pretty_time(stage.get('ArrivalTime'))
-                transportation = TRANSPORTATIONS.get(stage.get('Transportation'))
+            stage = dotmap.DotMap(stage)
 
-                text = '{0} {1} {2} {3} {4} -> {5} {6}'.format(pos, departure_name, departure, line_name, transportation, arrival_name, arrival)
+            if stage.Transportation == 0:
+                text = '[{0}] Walk ({1})'.format(pos, stage.WalkingTime)
+            else:
+                step_params = dict(pos=pos,
+                                   departure_name=stage.DepartureStop.Name,
+                                   departure_time=pretty_time(stage.DepartureTime),
+                                   line_name=stage.LineName,
+                                   arrival_name=stage.ArrivalStop.Name,
+                                   arrival_time=pretty_time(stage.ArrivalTime),
+                                   transportation=TRANSPORTATIONS[stage.Transportation],
+                                   )
+
+                text = '[{pos}] From {departure_name} at {departure_time} [{line_name}] -> {arrival_name} at {arrival_time} [{transportation}]'.format(**step_params)
 
             click.echo(text) 
 
