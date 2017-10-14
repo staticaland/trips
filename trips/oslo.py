@@ -1,16 +1,14 @@
-
 # -*- coding: utf-8 -*-
 
-import requests
-import click
-import udatetime
-import time
+import datetime
 import logging
-from datetime import datetime, date, time
-import dotmap
-import crayons
+import time
 
-"""Main module."""
+import box
+import click
+import crayons
+import requests
+import udatetime
 
 BASE_URL = 'https://reisapi.ruter.no'
 GET_PLACES_URL = BASE_URL + '/Place/GetPlaces/'
@@ -35,8 +33,10 @@ def place_id(place):
 def trip_proposals(from_id, to_id, after_time=None):
 
     if not after_time:
-        _after_time = datetime.now()
-        # 01102017190000
+
+        _after_time = datetime.datetime.now()
+
+        # Should be like 01102017190000
         after_time = _after_time.strftime('%d%m%Y%H%M%S')
 
     payload = {'fromPlace': from_id,
@@ -51,44 +51,52 @@ def trip_proposals(from_id, to_id, after_time=None):
     return request.json().get('TravelProposals')
 
 
-def pretty_time(da_time=''):
+def pretty_time(the_time):
     # 2017-10-07T16:41:00+02:00
-    time = udatetime.from_string(da_time)
-    return datetime.strftime(time, '%H:%M')
+    time = udatetime.from_string(the_time)
+    return datetime.datetime.strftime(time, '%H:%M')
 
  
-def trip(from_place, to_place):
+def proposals(from_place, to_place):
+
+    """Return a list of proposal dicts"""
 
     from_id = place_id(from_place)
 
     to_id = place_id(to_place)
 
-    proposals = trip_proposals(from_id, to_id)
+    return trip_proposals(from_id, to_id)
 
-    for position, proposal in enumerate(proposals, start=1):
 
-        click.echo(crayons.yellow('------------ Suggestion #{0} ({1})-------------\n'.format(position, proposal.get('TotalTravelTime'), bold=True)))
+def print_proposals(proposals):
 
-        if proposal.get('Remarks'):
-            print('Remarks! Check app or ruter.no.')
+    click.echo()
 
-        for pos, stage in enumerate(proposal.get('Stages'), start=1):
+    for proposal_position, proposal in enumerate(proposals, start=1):
 
-            stage = dotmap.DotMap(stage)
+        # Delightful dict dot notation. Makes the code easier to read. Hi!
+        proposal = box.Box(proposal, camel_killer_box=True)
 
-            if stage.Transportation == 0:
-                text = '[{0}] Walk ({1})'.format(pos, stage.WalkingTime)
+        click.echo(crayons.yellow('------------ Suggestion #{0} ({1}) -------------\n'.format(proposal_position, proposal.total_travel_time, bold=True)))
+
+        if proposal.remarks:
+            click.echo('Remarks! Check app or ruter.no.')
+
+        for stage_position, stage in enumerate(proposal.stages, start=1):
+
+            if stage.transportation == 0:
+                text = '[{0}] Walk ({1})'.format(stage_position, stage.walking_time)
             else:
-                step_params = dict(pos=crayons.cyan(pos, bold=True),
-                                   departure_name=stage.DepartureStop.Name,
-                                   departure_time=pretty_time(stage.DepartureTime),
-                                   line_name=stage.LineName,
-                                   arrival_name=stage.ArrivalStop.Name,
-                                   arrival_time=pretty_time(stage.ArrivalTime),
-                                   transportation=TRANSPORTATIONS[stage.Transportation],
+                step_params = dict(stage_position=crayons.cyan(stage_position, bold=True),
+                                   departure_name=stage.departure_stop.name,
+                                   departure_time=pretty_time(stage.departure_time),
+                                   line_name=stage.line_name,
+                                   arrival_name=stage.arrival_stop.name,
+                                   arrival_time=pretty_time(stage.arrival_time),
+                                   transportation=TRANSPORTATIONS[stage.transportation],
                                    )
 
-                text = '[{pos}] From {departure_name} at {departure_time} [{line_name}] -> {arrival_name} at {arrival_time} [{transportation}]'.format(**step_params)
+                text = '[{stage_position}] {transportation} from {departure_name} at {departure_time} [{line_name}] -> {arrival_name} at {arrival_time}'.format(**step_params)
 
             click.echo(text) 
 
