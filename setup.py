@@ -20,7 +20,7 @@ AUTHOR = 'Anders K. Pettersen'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'requests', 'click', 'python-box', 'udatetime',
+    'requests', 'crayons', 'click', 'python-box', 'udatetime',
 ]
 
 # The rest you shouldn't have to touch too much :)
